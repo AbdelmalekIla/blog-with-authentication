@@ -7,7 +7,6 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship
 from flask_login import UserMixin, login_user, LoginManager, login_required, current_user, logout_user
 from forms import CreatePostForm, Register, Login, CommentForm
-# from flask_gravatar import Gravatar
 from functools import wraps
 
 app = Flask(__name__)
@@ -129,10 +128,19 @@ def logout():
     return redirect(url_for('get_all_posts'))
 
 
-@app.route("/post/<int:post_id>")
+@app.route("/post/<int:post_id>", methods=['GET', 'POST'])
 def show_post(post_id):
     requested_post = BlogPost.query.get(post_id)
     comment_form = CommentForm()
+    if comment_form.validate_on_submit():
+        comment = Comment(
+            text=request.form.get('comment'),
+            comment_author=current_user,
+            parent_post=requested_post
+        )
+        db.session.add(comment)
+        db.session.commit()
+        return redirect(url_for('post'))
     return render_template("post.html", post=requested_post, current_user=current_user, form=comment_form)
 
 
